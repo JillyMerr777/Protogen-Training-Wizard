@@ -1,0 +1,1 @@
+I created this site prior to the Workday formal training. The thought was to create a smart training wizard that connected to the provided original video series. The wizard would take the videos, summarize and timestamp, and make it easy for Slalomers to complete each step of the Protogen Training in one view.
