@@ -10,12 +10,23 @@
     <header class="hero">
       <div class="hero-inner">
         <div class="brand-row">
-          <img
-            class="brand-logo"
-            src="Assets/slalom-logo-white-1500x400.png"
-            alt="Slalom logo"
-          />
-          <span class="brand-fallback">Slalom</span>
+          <div class="brand-lockup">
+            <img
+              class="brand-logo"
+              src="Assets/slalom-logo-white-1500x400.png"
+              alt="Slalom logo"
+            />
+            <span class="brand-fallback">Slalom</span>
+          </div>
+
+          <nav class="page-tabs" aria-label="Page tabs">
+            <button class="page-tab is-active" type="button" data-tab-target="training">
+              Protogen Training
+            </button>
+            <button class="page-tab" type="button" data-tab-target="inspired">
+              Get Inspired
+            </button>
+          </nav>
         </div>
 
         <h1>CX | Protogen Training Wizard</h1>
@@ -41,6 +52,7 @@
     </header>
 
     <main class="content">
+      <section class="tab-panel is-active" data-tab-panel="training">
       <section class="wizard-card" aria-label="Training wizard">
         <div class="wizard-progress" aria-label="Training progress">
           <div class="wizard-progress-track" aria-hidden="true">
@@ -1096,6 +1108,47 @@
           </div>
         </article>
       </section>
+      </section>
+
+      <section class="tab-panel" data-tab-panel="inspired" hidden>
+        <section class="inspired-hero-card" aria-label="Get inspired intro">
+          <h1 class="inspired-title">AI magic to inspire your projects</h1>
+          <p class="inspired-copy">
+            Discover recently updated AI repositories from GitHub and spark your
+            next build.
+          </p>
+        </section>
+
+        <section class="ai-projects-card" data-ai-projects-section aria-label="Recently updated AI projects">
+          <div class="ai-projects-header">
+            <h2>Recently Updated AI Projects</h2>
+            <p>
+              This feed uses the GitHub Search API and refreshes when you scroll
+              to this section.
+            </p>
+          </div>
+
+          <div class="ai-topic-controls" role="group" aria-label="AI topic filters">
+            <button class="ai-topic-btn is-active" type="button" data-topic="artificial-intelligence">
+              General AI
+            </button>
+            <button class="ai-topic-btn" type="button" data-topic="generative-ai">
+              Generative AI
+            </button>
+            <button class="ai-topic-btn" type="button" data-topic="llm">
+              LLM
+            </button>
+            <button class="ai-topic-btn" type="button" data-topic="machine-learning">
+              Machine Learning
+            </button>
+          </div>
+
+          <p class="ai-projects-status" data-ai-status>
+            Scroll to this section to load the latest repositories.
+          </p>
+          <ul class="ai-project-list" data-ai-project-list aria-live="polite"></ul>
+        </section>
+      </section>
     </main>
 
     <section class="celebration-screen" hidden aria-live="polite" aria-label="Training complete">
@@ -1124,8 +1177,221 @@
       const finishButton = document.querySelector('[data-finish-training]');
       const celebrationScreen = document.querySelector('.celebration-screen');
       const celebrationCanvas = document.querySelector('.celebration-canvas');
+      const tabButtons = [...document.querySelectorAll('[data-tab-target]')];
+      const tabPanels = [...document.querySelectorAll('[data-tab-panel]')];
+      const aiProjectsSection = document.querySelector('[data-ai-projects-section]');
+      const aiProjectsList = document.querySelector('[data-ai-project-list]');
+      const aiStatus = document.querySelector('[data-ai-status]');
+      const aiTopicButtons = [...document.querySelectorAll('.ai-topic-btn')];
       let maxCompletedStep = 1;
       let stopCelebration = null;
+      let selectedAiTopic = 'artificial-intelligence';
+      let aiHasLoadedOnScroll = false;
+      let aiFetchController = null;
+
+      function initializePageTabs() {
+        if (!tabButtons.length || !tabPanels.length) return;
+
+        function setActiveTab(tabName) {
+          tabButtons.forEach((button) => {
+            button.classList.toggle('is-active', button.dataset.tabTarget === tabName);
+          });
+
+          tabPanels.forEach((panel) => {
+            const isActive = panel.dataset.tabPanel === tabName;
+            panel.hidden = !isActive;
+            panel.classList.toggle('is-active', isActive);
+          });
+
+          if (tabName === 'inspired') {
+            initializeAiProjectsOnScroll();
+          }
+        }
+
+        tabButtons.forEach((button) => {
+          button.addEventListener('click', () => {
+            const targetTab = button.dataset.tabTarget;
+            if (!targetTab) return;
+            setActiveTab(targetTab);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          });
+        });
+
+        setActiveTab('training');
+      }
+
+      function setAiStatus(message, isError = false) {
+        if (!aiStatus) return;
+        aiStatus.textContent = message;
+        aiStatus.classList.toggle('is-error', isError);
+      }
+
+      function formatRelativeUpdate(dateText) {
+        const date = new Date(dateText);
+        if (Number.isNaN(date.getTime())) return 'Updated recently';
+
+        const deltaMs = Date.now() - date.getTime();
+        const hourMs = 1000 * 60 * 60;
+        const dayMs = hourMs * 24;
+
+        if (deltaMs < hourMs) {
+          const minutes = Math.max(1, Math.round(deltaMs / (1000 * 60)));
+          return `Updated ${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+        }
+
+        if (deltaMs < dayMs) {
+          const hours = Math.max(1, Math.round(deltaMs / hourMs));
+          return `Updated ${hours} hour${hours === 1 ? '' : 's'} ago`;
+        }
+
+        const days = Math.max(1, Math.round(deltaMs / dayMs));
+        return `Updated ${days} day${days === 1 ? '' : 's'} ago`;
+      }
+
+      function createProjectCard(repository) {
+        const item = document.createElement('li');
+        item.className = 'ai-project-item';
+
+        const title = document.createElement('a');
+        title.className = 'ai-project-title';
+        title.href = repository.html_url;
+        title.target = '_blank';
+        title.rel = 'noopener noreferrer';
+        title.textContent = repository.full_name;
+
+        const description = document.createElement('p');
+        description.className = 'ai-project-description';
+        description.textContent = repository.description || 'No description provided.';
+
+        const meta = document.createElement('p');
+        meta.className = 'ai-project-meta';
+        const language = repository.language || 'Mixed';
+        meta.textContent = `${language} • ★ ${repository.stargazers_count.toLocaleString()} • ${formatRelativeUpdate(repository.pushed_at)}`;
+
+        item.appendChild(title);
+        item.appendChild(description);
+        item.appendChild(meta);
+        return item;
+      }
+
+      function renderProjects(items) {
+        if (!aiProjectsList) return;
+        aiProjectsList.textContent = '';
+
+        items.forEach((repository) => {
+          aiProjectsList.appendChild(createProjectCard(repository));
+        });
+      }
+
+      async function loadAiProjects(topic) {
+        if (!aiProjectsList) return;
+
+        if (aiFetchController) {
+          aiFetchController.abort();
+        }
+
+        aiFetchController = new AbortController();
+        setAiStatus('Loading recently updated repositories...');
+
+        const requestUrl = new URL('https://api.github.com/search/repositories');
+        requestUrl.searchParams.set('q', `topic:${topic}`);
+        requestUrl.searchParams.set('sort', 'updated');
+        requestUrl.searchParams.set('order', 'desc');
+        requestUrl.searchParams.set('per_page', '6');
+
+        try {
+          const response = await fetch(requestUrl.toString(), {
+            headers: {
+              Accept: 'application/vnd.github+json',
+              'X-GitHub-Api-Version': '2022-11-28',
+            },
+            signal: aiFetchController.signal,
+          });
+
+          if (!response.ok) {
+            if (response.status === 403) {
+              throw new Error('GitHub API rate limit reached. Try again shortly.');
+            }
+            throw new Error('Unable to load projects right now.');
+          }
+
+          const payload = await response.json();
+          const projects = (payload.items || []).slice(0, 6);
+
+          if (!projects.length) {
+            aiProjectsList.textContent = '';
+            setAiStatus('No repositories were found for this topic yet.');
+            return;
+          }
+
+          renderProjects(projects);
+          setAiStatus(`Showing ${projects.length} recently updated repositories for topic:${topic}.`);
+        } catch (error) {
+          if (error.name === 'AbortError') {
+            return;
+          }
+          aiProjectsList.textContent = '';
+          setAiStatus(error.message || 'Could not load projects.', true);
+        }
+      }
+
+      function initializeAiTopicButtons() {
+        if (!aiTopicButtons.length) return;
+
+        aiTopicButtons.forEach((button) => {
+          button.addEventListener('click', () => {
+            const topic = button.dataset.topic;
+            if (!topic || topic === selectedAiTopic) return;
+
+            selectedAiTopic = topic;
+            aiTopicButtons.forEach((otherButton) => {
+              otherButton.classList.toggle('is-active', otherButton === button);
+            });
+
+            if (aiHasLoadedOnScroll) {
+              loadAiProjects(selectedAiTopic);
+            }
+          });
+        });
+      }
+
+      function initializeAiProjectsOnScroll() {
+        if (!aiProjectsSection || aiHasLoadedOnScroll) return;
+
+        const onVisible = () => {
+          if (aiHasLoadedOnScroll) return;
+          aiHasLoadedOnScroll = true;
+          loadAiProjects(selectedAiTopic);
+        };
+
+        if (!('IntersectionObserver' in window)) {
+          onVisible();
+          return;
+        }
+
+        const observer = new IntersectionObserver(
+          (entries) => {
+            const firstVisibleEntry = entries.find((entry) => entry.isIntersecting);
+            if (!firstVisibleEntry) return;
+            observer.disconnect();
+            onVisible();
+          },
+          {
+            root: null,
+            rootMargin: '0px 0px -10% 0px',
+            threshold: 0.15,
+          }
+        );
+
+        observer.observe(aiProjectsSection);
+
+        const bounds = aiProjectsSection.getBoundingClientRect();
+        const isAlreadyVisible = bounds.top < window.innerHeight * 0.9 && bounds.bottom > window.innerHeight * 0.1;
+        if (isAlreadyVisible) {
+          observer.disconnect();
+          onVisible();
+        }
+      }
 
       function showStep(stepNumber) {
         steps.forEach((step) => {
@@ -1381,6 +1647,9 @@
         });
       }
 
+      initializePageTabs();
+      initializeAiTopicButtons();
+      initializeAiProjectsOnScroll();
       showStep(1);
     </script>
   </body>

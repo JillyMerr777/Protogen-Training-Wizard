@@ -40,8 +40,58 @@ body {
 .brand-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
   min-height: 36px;
-  margin-bottom: 1rem;
+  margin-bottom: 1.15rem;
+}
+
+.brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+}
+
+.page-tabs {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.28rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  backdrop-filter: blur(4px);
+}
+
+.page-tab {
+  border: 1px solid transparent;
+  background: transparent;
+  color: #ffffff;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.42rem 0.76rem;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.16s ease, color 0.16s ease, transform 0.16s ease, border-color 0.16s ease;
+}
+
+.page-tab:hover {
+  border-color: rgba(255, 255, 255, 0.55);
+  transform: translateY(-1px);
+}
+
+.page-tab:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 1px;
+}
+
+.page-tab.is-active {
+  background: #ffffff;
+  border-color: rgba(255, 255, 255, 0.9);
+  color: #0f1f3b;
+  box-shadow: 0 4px 12px rgba(8, 18, 39, 0.2);
 }
 
 .brand-logo {
@@ -121,11 +171,131 @@ h1 {
   padding: 0 1.5rem;
 }
 
+.tab-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.tab-panel[hidden] {
+  display: none;
+}
+
 .wizard-card {
   background: var(--surface);
   border: 1px solid var(--card-border);
   border-radius: 14px;
   padding: 1.4rem;
+}
+
+.inspired-hero-card {
+  background: linear-gradient(145deg, #041634 0%, #0a2b60 58%, #0c62fb 130%);
+  color: #ffffff;
+  border-radius: 14px;
+  border: 1px solid rgba(8, 33, 79, 0.4);
+  box-shadow: 0 10px 20px rgba(4, 17, 41, 0.18);
+  padding: 1.55rem 1.35rem;
+}
+
+.inspired-title {
+  margin: 0;
+}
+
+.inspired-copy {
+  margin: 0.8rem 0 0;
+  font-size: 1.02rem;
+  max-width: 760px;
+  opacity: 0.98;
+}
+
+.ai-projects-card {
+  margin-top: 0;
+  background: linear-gradient(145deg, #ffffff 0%, #f8fbff 100%);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  padding: 1.2rem;
+}
+
+.ai-projects-header p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.ai-topic-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+
+.ai-topic-btn {
+  border: 1px solid #b9cefb;
+  border-radius: 999px;
+  background: #f2f7ff;
+  color: #1b3768;
+  font-size: 0.83rem;
+  font-weight: 600;
+  padding: 0.38rem 0.7rem;
+  cursor: pointer;
+}
+
+.ai-topic-btn:hover {
+  border-color: #7ea7ff;
+}
+
+.ai-topic-btn.is-active {
+  background: var(--primary-blue);
+  border-color: var(--primary-blue);
+  color: #ffffff;
+}
+
+.ai-projects-status {
+  margin: 0.8rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.ai-projects-status.is-error {
+  color: #9f2339;
+}
+
+.ai-project-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 0.95rem 0 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.ai-project-item {
+  border: 1px solid #d8e5ff;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 0.75rem 0.8rem;
+}
+
+.ai-project-title {
+  font-weight: 700;
+  color: #0d3a8b;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.ai-project-title:hover {
+  text-decoration: underline;
+}
+
+.ai-project-description {
+  margin: 0.38rem 0 0;
+  color: var(--text-main);
+  font-size: 0.89rem;
+}
+
+.ai-project-meta {
+  margin: 0.45rem 0 0;
+  color: #456196;
+  font-size: 0.8rem;
 }
 
 h2 {
@@ -589,6 +759,25 @@ body.training-complete .celebration-screen {
     padding-top: 2.3rem;
   }
 
+  .brand-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+
+  .page-tabs {
+    margin-left: 0;
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 0.45rem;
+  }
+
+  .page-tab {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+
   .wizard-card {
     padding: 1rem;
   }
@@ -598,6 +787,10 @@ body.training-complete .celebration-screen {
   }
 
   .academy-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-project-list {
     grid-template-columns: 1fr;
   }
 
